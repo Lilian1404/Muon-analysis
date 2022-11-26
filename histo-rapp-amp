@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Jan  8 16:13:07 2022
+
+@author: cyannbuisson
+"""
+
+#data.txt est construit par colonne avec :
+#Event	#Nbrpic	#DT(moy)		#DT(max)		#DT(1ère)	#DT(len-1)	#xpic1[0]	#xpic1[len]	#xpic2[0]	#xpic2[len]	#xminpic1	#xminpic2	#yminpic1	#yminpic2
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import chi2
+
+
+Xm = np.loadtxt("data.txt")
+N=len(Xm[:,0])-1 #nombre d'event
+K=int(2*N**(1/3)) #nombre de bins selon la règle "rule" du TP1
+ymin1=Xm[:,12]
+ymin2=Xm[:,13]
+
+nbr1pic=0
+for i in range (N):
+    if ymin2[i]==0:
+        nbr1pic+=1
+
+rap=[ymin2[j]/ymin1[j] for j in range (N) if ymin2[j]!=0]
+
+#Histogramme de la position du premier pic, en comptant les évènements à 1 et 2 pics
+bins=np.linspace(0,7,K+1)
+
+
+plt.hist(rap,bins,density=True)
+#on voit que le best fit serait chi2 : https://www.statology.org/plot-chi-square-distribution-python/
+plt.plot(bins, chi2.pdf(bins, df=4))
+plt.title('Histogramme des rapports d\'amplitudes pour %i events'%(N-nbr1pic))
+plt.xlabel('Amplitude(mV)')
+plt.show()
+#mais ça couille
+
+"""
+data,bins1=np.histogram(rap, bins,density=True)
+
+from scipy.special import gamma
+def chi2(x,k): #https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chi2.html
+    return(x**(k/2-1)*np.exp(-x/2))/(2**(k/2)*gamma(k/2))
+"""
+
+"""
+data,bins1=np.histogram(rap, bins,density=True)
+
+from scipy.special import iv
+def chi2(x,k,Lambda): #https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ncx2.html#scipy.stats.ncx2
+    return np.exp(-(Lambda+x)/2)*(x/Lambda)**((k-2)/4)*iv((k-2)/2, np.sqrt(Lambda*x))/2
+
+from scipy.optimize import curve_fit
+binscenters = np.array([0.5 * (bins[i] + bins[i+1]) for i in range(K)])
+popt,cov=curve_fit(chi2,xdata=binscenters,ydata=data,p0=[4,1])
+
+#plot tout le bazar
+plt.bar(binscenters, data, width=bins[1] - bins[0], color='navy', label=r'Histogramme')
+plt.plot(bins,chi2(bins,*popt),label="Fit avec k=%i, Lambda=%i" %(popt[0],popt[1]))
+plt.legend()
+plt.title('Fit de l\'histogramme ')
+plt.show()
+"""

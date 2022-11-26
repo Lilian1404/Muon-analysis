@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jan 12 20:24:04 2022
+
+@author: cyannbuisson
+"""
+
+#compter nombre de pics largeur>80ns
+#en fonction du nombre valider ou invalider hypothèse du pic large chez pic unique
+import numpy as np
+import matplotlib.pyplot as plt
+
+Xm = np.loadtxt("data.txt")
+N=len(Xm[:,0])-1 #nombre d'event
+
+K=int(2*N**(1/3)) #nombre de bins selon la règle "rule" du TP1
+
+nbr1pic=0
+for i in range (N-1):
+    if Xm[i,1]==1:
+        nbr1pic+=1
+largeursimp=[Xm[i,7]-Xm[i,6] for i in range(N) if Xm[i,1]==1]
+
+
+bins=np.linspace(25,200,K+1)
+plt.hist(largeursimp,bins)
+plt.axvline(80,color='red', linestyle='--')
+plt.title('Histogramme des largeurs des pics simples pour %i events'%N)
+plt.xlabel('Temps(ns)')
+plt.show()
+
+#j'arrive pas à trouver d'event où le pic est large mais pas plat
+#pourtant quand je calcule le nbr de pic large >80ns, ça ne match pas avec le nbr de pics plats simples
+a=0
+for i in range (len(largeursimp)-1):
+    if largeursimp[i]>80:
+        a+=1
+print('Nbr pic large >80ns =',a)
+
+#là j'essaye de trouver des pics largeur>80 qui ne soit pas plat, j'obtiens la liste de leur n°
+num=[]
+for i in range (N):
+    if Xm[i,1]==1:#pic unique
+        if Xm[i,7]-Xm[i,6]>80 and Xm[i,14]==1:
+            num.append(i)
+print('liste des pics large>80 et pas plats',num)
+
+#puree de pois je crois que tous les pics dont largeur >80 mais pas plats sont des double pics qu'on a manqué !
+#il faut vérifier mais ça peut être intéressant : une autre méthode pour trouver les doubles pics
+#vérifier que tous les uniques pics plats sont bien des simples pics et pas des doubles cachés

@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 11 10:03:15 2022
+
+@author: cyannbuisson
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+Xm = np.loadtxt("data.txt")
+N=len(Xm[:,0])-1 #nombre d'event
+plat1=Xm[:,14] #colonne des pics plats pour unique et pic 1 du cas double
+plat2=Xm[:,15] #colonne des pics plats pour pic 2 du cas double
+
+nbrplatun=0
+nbrplatdoub=0
+for i in range (N):
+    if Xm[i,1]==1 and plat1[i]>1: #s'il y a un pic unique et s'il est plat
+        nbrplatun+=1
+    if Xm[i,1]==2: #s'il y a un pic double
+        if plat1[i]>1:
+            nbrplatdoub+=1
+        if plat2[i]>1:
+            nbrplatdoub+=1
+
+print("Plat unique : %i sur %i events, pourcentage : %i%% "%(nbrplatun,N,nbrplatun/N*100))
+print("Plat double : %i sur %i events, pourcentage : %i%% "%(nbrplatdoub,N,nbrplatdoub/N*100))
+print("Nombre total : %i sur %i events, pourcentage : %i%%"%(nbrplatun+nbrplatdoub,N,(nbrplatun+nbrplatdoub)/N*100))
+
+#faire histo des amplitudes pour être sûr de nos données
+K=int(2*N**(1/3)) #nombre de bins selon la règle "rule" du TP1
+
+nbr1pic=0
+for i in range (N-1):
+    if Xm[i,1]==1:
+        nbr1pic+=1
+
+ampdouble=[Xm[i,12] for i in range(N) if Xm[i,1]==2]
+bins=np.linspace(-250,0,K+1)
+plt.hist(ampdouble,bins)
+plt.title('Histogramme des amplitudes des pics (double) pour %i events'%N)
+plt.xlabel('Amplitude(mV)')
+plt.show()

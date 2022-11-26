@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan  7 16:12:02 2022
+
+@author: cyannbuisson
+"""
+#produire d'abord le fichier data.txt à partir du code analysis.py
+#lire les instructions en début de analysis.py avant de le lancer
+#bien placer ce code dans le même dossier que data.txt
+
+#data.txt est construit par colonne avec :
+#Event	#Nbrpic	#DT(moy)		#DT(max)		#DT(1ère)	#DT(len-1)	#xpic1[0]	#xpic1[len]	#xpic2[0]	#xpic2[len]	#xminpic1	#xminpic2	#yminpic1	#yminpic2
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+Xm = np.loadtxt("data.txt")
+xmin1=Xm[:,10] 
+xmin22=Xm[:,11]
+N=len(Xm[:,0])-1 #nombre d'event
+K=int(2*N**(1/3)) #nombre de bins selon la règle "rule" du TP1
+
+nbr1pic=0
+for i in range (N-1):
+    if Xm[i,1]==1:
+        nbr1pic+=1
+
+#Histogramme de la position du premier pic, en comptant les évènements à 1 et 2 pics
+bins=np.linspace(0,25000,K+1)
+plt.hist(xmin1,bins)
+plt.title('Histogramme des positions du pic 1 (dans cas simple ou double pics) pour %i events'%N)
+plt.xlabel('Temps(ns)')
+plt.show()
+
+#Histogramme de la position du premier pic, en ne comptant que les events à 2 pics
+#on va mettre des 0 dans xpic1 là où il y a des évènements à 1 pics
+xmin12=np.zeros(N)
+for j in range (N):
+    if xmin22[j]==0:
+        xmin12[j]=0
+    else:
+        xmin12[j]=xmin1[j]
+bins=np.linspace(1,25000,K+1)
+plt.hist(xmin12,bins)
+plt.title('Histogramme des positions du pic 1 (dans cas double pics) pour %i events'%(N-nbr1pic))
+plt.xlabel('Temps(ns)')
+plt.show()
+
+
+#Histogramme de la position du deuxième pic, en ne comptant que les events à 2 pics
+bins=np.linspace(20000,22000,K+1)
+plt.hist(xmin22,bins)
+plt.title('Histogramme des positions du pic 2 (dans cas double pics) pour %i events'%(N-nbr1pic))
+plt.xlabel('Temps(ns)')
+plt.show()
+
+#Histogramme de la position du deuxième pic, en comptant aussi dedans les évènements avec un seul pic
+#on va mettre les positions des pics uniques de xmin1 à la place des 0 dans xmin2
+xmin2=np.zeros(N)
+for j in range (N):
+    if xmin22[j]==0:
+        xmin2[j]=xmin1[j]
+    else:
+        xmin2[j]=xmin22[j]
+bins=np.linspace(20000,22000,K+1)
+plt.hist(xmin2,bins)
+plt.title('Histogramme des positions du pic 2 (dans cas simple et double pics) pour %i events'%N)
+plt.xlabel('Temps(ns)')
+plt.show()
+
+#Histogramme de la position du pic unique
+#on ne prend que les valeurs de xmin1 correspondant aux 0 de xmin2
+xpicun=[]
+for j in range (N):
+    if xmin22[j]==0:
+        xpicun.append(xmin1[j])
+bins=np.linspace(20000,22000,K+1)
+plt.hist(xpicun,bins)
+plt.title('Histogramme des positions du pic unique pour %i/%i events totaux'%(nbr1pic,N))
+plt.xlabel('Temps(ns)')
+plt.show()

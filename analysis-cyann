@@ -1,0 +1,129 @@
+#cd Pictures/muons/work
+#python RunAnalyze.py Analysis buisson_dubray.bin
+"""
+Created on Wed Jan  5 14:43:12 2022
+
+@author: cyannbuisson
+"""
+
+
+#cd chemin vers dossier contenant tous les codes et fichiers
+# créer un fichier nommé data.txt avec pour première ligne :
+#Event	#Nbrpic	#DT(moy)		#DT(max)		#DT(1ère)	#DT(len-1)	#xpic1[0]	#xpic1[len]	#xpic2[0]	#xpic2[len]	#xminpic1	#xminpic2	#yminpic1	#yminpic2	#plat1	#plat2
+#ce programme créera des colonnes à la suite de chaque nom
+
+#python RunAnalyze.py Analysis buisson_dubray.bin
+
+#puis utiliser le programme histogramme.py
+
+#####################################################
+### PARTIE A COMPLETER
+#####################################################
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def Begin():
+    print ('start')
+    global f
+
+def Process(evt):
+
+    events=10000
+    seuil=-20
+    L=70 #largeur
+    
+    if(evt.Index>events):
+        return
+    print ('process event %i' %evt.Index)
+    n = evt.Size
+    
+#Créer un tableau de x(temps en ns) et y(tension en mV) pour chaque évent
+    x=[]
+    y=[]
+    infseuil=[]
+    for i in range(n):
+        x.append(evt.SamplingTime*i) #abscisses (temps ns)
+        y.append(evt.Data[i]*evt.Gain) #ordonnées (amplitude mV)
+#Identifier les pics
+        if y[i]<seuil:
+            infseuil.append(i) #INDICES des points dont l'amplitudes est sous le seuil
+    
+    #pour info : les valeurs de temps pour lesquelles les amplitudes seraient sous le seuil sont:
+                #[x[j] for j in infseuil]
+                #les valeurs d'amplitudes sous le seuil sont:
+                #[y[j] for j in infseuil]
+
+#Séparer les deux pics
+    pic1=[infseuil[0]] #INDICES des points pour lesquels les y du premier pic sont sous le seuil
+    pic2=[] #deuxième pic
+    for i in range(len(infseuil)-1):
+        if x[infseuil[i+1]]-x[infseuil[i]]<L:
+            pic1.append(infseuil[i+1])
+        else:
+            break
+    pic2 = [j for j in infseuil if j not in pic1]
+#maintenant qu'on a les indices, on peut créer les x et y de chaque pic
+    xpic1=[x[j] for j in pic1]
+    ypic1=[y[j] for j in pic1]
+    xpic2=[x[j] for j in pic2]
+    ypic2=[y[j] for j in pic2]
+#on veut le temps (x) correspondant au minimum (y) de chaque pic
+    minamp1=[x[j]for j in pic1 if y[j]==min(ypic1)] #valeur(s) min du 1er pic
+    minamp2=[x[j]for j in pic2 if y[j]==min(ypic2)] #2eme pic
+    plat1=len(minamp1) #nombre de valeurs dans le minimum du pic (1 si normal,>1 si plat)
+    minamp1=minamp1[len(minamp1)//2] #dans le cas où le pic serait plat
+
+#calculer delta t selon plusieurs méthodes
+    if pic2==[]:
+        DeltaT1=-99
+        DeltaT2=-99
+        DeltaT3=-99
+        DeltaT4=-99
+        minamp2=0
+        plat2=0
+        xpic2=[0]
+        ypic2=[0]
+        nbrpic=1
+    else:
+        DeltaT1=(np.sum(xpic2)/len(xpic2))-(np.sum(xpic1)/len(xpic1)) #moyenne
+        plat2=len(minamp2) #nombre de pics plats 2
+        minamp2=minamp2[len(minamp2)//2] #dans le cas où le pic serait plat 
+        DeltaT2=minamp2-minamp1 #minimum d'amplitude
+        DeltaT3=xpic2[0]-xpic1[0] #1ere valeur des pics
+        DeltaT4=xpic2[len(xpic2)-1]-xpic1[len(xpic1)-1] #dernière valeur des pics
+        nbrpic=2
+        
+#enregistrer les paramètres dans un fichier data.txt
+#    fichier=open('data.txt','a')
+#    fichier.write('\n'+str(evt.Index)+ '\t %.i \t %i \t\t %i \t\t %i \t\t %i \t\t %i \t\t %i  \t\t %i \t\t %i \t\t %i \t\t %i\t\t %i \t\t %i \t\t %i \t %i ' %(nbrpic,DeltaT1,DeltaT2,DeltaT3,DeltaT4,xpic1[0],xpic1[len(xpic1)-1],xpic2[0],xpic2[len(xpic2)-1],minamp1,minamp2,min(ypic1),min(ypic2),plat1,plat2))
+
+#plot comme oscillo
+"""
+plt.plot(x,y,label="event %i" %evt.Index)
+plt.xlabel('Temps (ns)')
+plt.ylabel('Tension (mV)')
+plt.title('Oscilloscope de l\'évènement %i'%evt.Index)
+plt.plot(x,np.ones(len(x))*-20,label="seuil")
+plt.scatter(x,y)
+plt.legend()
+plt.show()
+"""
+#rechercher des pics uniques larges et plats
+"""
+LARGPP= np.loadtxt("largeplat.txt")
+for i in range(len(LARGPP[:])):
+if evt.Index==LARGPP[i]:
+fig=plt.figure()
+a1 = fig.add_axes([0,0,1,1])
+a1.plot(x,y,label="event %i" %evt.Index)
+a1.plot(x,np.ones(len(x))*-20,linestyle='--',label="seuil")
+a1.set_xlim(21200,21500)
+plt.title('Oscilloscope de l\'évènement %i'%evt.Index)
+plt.scatter(x,y)
+plt.legend()
+plt.show()
+"""
+def End():
+    print ('end')

@@ -1,0 +1,72 @@
+"""
+Created on Tue Jan  4 10:35:04 2022
+
+@author: cyannbuisson
+"""
+#produire d'abord le fichier data.txt à partir du code analysis.py
+#lire les instructions en début de analysis.py avant de le lancer
+#bien placer ce code dans le même dossier que data.txt
+
+#data.txt est construit par colonne avec :
+# 0:Event 1:Nbrpic 2:DT(moy) 3:DT(max) 4:DT(1ère) 5:DT(len-1) 6:largeur1 7:largeur2 8:dist12 9:xminpic1 10:xminpic2	 11:yminpic1 12:yminpic2
+
+#code écrit suivant le tutoriel https://riptutorial.com/scipy/example/31081/fitting-a-function-to-data-from-a-histogram
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+Xm = np.loadtxt("data.txt")
+N=len(Xm[:,0])-1 #nombre d'event
+
+nbr1pic=0
+for i in range (N-1):
+    if Xm[i,1]==1:
+        nbr1pic+=1
+
+def label(Def): #juste pour le titre du graphe
+    if Def==2:
+        return('la moyenne')
+    if Def==3:
+        return('le minimum d\'amplitude')
+    if Def==4:
+        return('la première valeur')
+    if Def==5:
+        return('la dernière valeur')
+    
+#Fonction pour fit
+
+def dureevie(r,A,B,tau):
+    return (A*np.exp(-r/tau)+B)
+
+#HISTOGRAMME
+
+K=int(2*N**(1/3)) #nombre de bins selon la règle "rule" du TP1
+
+for Def in [2,3,4,5]: #n° définition de la durée entre deux pics dans le tableau de data.txt
+    bins=np.linspace(0,max(Xm[:,Def]),K+1)
+    data,bins1=np.histogram(Xm[:,Def], bins)
+    
+    #Fit de l'histo selon le milieu des bins
+    binscenters = np.array([0.5 * (bins[i] + bins[i+1]) for i in range(K)])
+    popt,cov=curve_fit(dureevie,xdata=binscenters,ydata=data,p0=[4000,100,2500])
+    
+    #plot tout le bazar
+    plt.bar(binscenters, data, width=bins[1] - bins[0], color='navy', label=r'Histogramme pour %i évènements'%(N-nbr1pic))
+    plt.plot(bins,dureevie(bins,*popt),label="Fit avec A=%i B=%i tau=%i +/- %i" %(popt[0], popt[1],popt[2],np.sqrt(cov[2,2])))
+    plt.legend()
+    plt.title('Fit de l\'histogramme des durées selon %s des pics'%label(Def))
+    plt.show()
+    print('incertitude A=%.1f, B=%.1f selon méthode de %s'%(cov[0,0],cov[1,1],label(Def)))
+""""
+Pour changer l'axe des abscisses:
+fig=plt.figure()
+a1 = fig.add_axes([0,0,1,1])
+a1.bar(binscenters, data, width=bins[1] - bins[0], color='navy', label=r'Histogramme pour %i évènements dont %.1f%% à 1 pic'%(N,nbr1pic/N*100))
+a1.plot(bins,dureevie(bins,*popt),label="Fit avec A=%i B=%i tau=%i +/- %i" %(popt[0], popt[1],popt[2],np.sqrt(cov[2,2])))
+a1.set_xlim(-100,max(binscenters)) #par exemple mais à faire varier
+plt.legend()
+plt.title('Fit de l\'histogramme des durées selon %s des pics (%i bins)'%(label(Def),K))
+plt.show()
+
+"""
